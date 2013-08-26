@@ -45,7 +45,7 @@ function IrcConnection.start(self)
     self:connect()
     self:authorize()
     while true do
-        s, errmsg = pcall(self.process, self)
+        local s, errmsg = pcall(self.process, self)
         if s == false then
             print(" [!] Process failed:",errmsg)
         end
@@ -71,7 +71,7 @@ function IrcConnection.raw_send(self, data)
 end
 
 function IrcConnection.read_line(self)
-    line, err = self.socket:receive()
+    local line, err = self.socket:receive()
     -- TODO: graceful error handling
     if err then print("Error occured: " .. err .. " [" .. (line or "") .. "]") end
 
@@ -80,10 +80,10 @@ function IrcConnection.read_line(self)
 end
 
 function IrcConnection.process(self)
-    line = self:read_line()
-    prefix, command, arguments = self:parse_line(line)
+    local line = self:read_line()
+    local prefix, command, arguments = self:parse_line(line)
     print("{"..arguments.."}")
-    event = {
+    local event = {
         ["prefix"] = prefix,
         ["command"] = command,
         ["arguments"] = arguments,
@@ -114,7 +114,12 @@ end
 
 function IrcConnection.parse_line(self, line)
     -- Not enough lua-fu yet to do it correctly. *yet*.
-    _, prefix, command, _, arguments = rex.match(line, _rfc_1459_command_regexp)
+    local _, prefix, command, _, arguments = rex.match(line, _rfc_1459_command_regexp)
+
+    prefix = prefix or ""
+    command = command or ""
+    arguments = arguments or ""
+
     return prefix, command, arguments
 end
 
@@ -131,7 +136,7 @@ function IrcConnection.fire_event(self, event, args)
     if self.handlers[event] ~= nil then
         -- shall we just use numeric for?
         for i, v in ipairs(self.handlers[event]) do
-            status, msg = pcall(v, self, args)
+            local status, msg = pcall(v, self, args)
             if status == false then
                 print("[!] Error handler failed in "..msg)
             end
