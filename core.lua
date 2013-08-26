@@ -95,11 +95,25 @@ function IrcConnection.process(self)
         ["source"] = prefix,
     }
 
+    if command:upper() == "PRIVMSG" then
+        if event.is_pubmsg then
+            event["respond"] = function(ev_self, msg)
+                self:privmsg(event.channel, msg)
+            end
+        else
+            event["respond"] = function(ev_self, msg)
+                self:privmsg(event.username, msg)
+            end
+        end
+    end
+
     self:fire_event("irc." .. command, event)
     
-    trigger_name = self:get_trigger_name(event.message)
-    if command:upper() == "PRIVMSG" and trigger_name then
-        self:fire_event("trigger." .. trigger_name, event)
+    event.trigger_name = self:get_trigger_name(event.message)
+    
+    if command:upper() == "PRIVMSG" and event.trigger_name then
+        event.trigger_arguments = self:get_trigger_arguments(event.message)
+        self:fire_event("trigger." .. event.trigger_name, event)
     end
 end
 
@@ -109,6 +123,16 @@ function IrcConnection.get_trigger_name(self, message)
         -- that is so fucking dirty...
         return message:sub(self.trigger_char:len()+1,
             (message:find(" ", self.trigger_char:len()+1, true) or message:len()+1)-1)
+    end
+end
+
+function IrcConnection.get_trigger_arguments(self, message)
+    if message ~= nil and self.trigger_char ~= nil and
+        message:sub(1, self.trigger_char:len()) == self.trigger_char and
+        message:find(" ", self.trigger_char:len()+1, true) then
+        return message:sub(message:find(" ", self.trigger_char:len()+1, true)+1)
+    else
+        return ""
     end
 end
 
