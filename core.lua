@@ -169,7 +169,9 @@ function IrcConnection.fire_event(self, event, args)
 end
 
 function IrcConnection.privmsg(self, target, message)
-    self:raw_send(("PRIVMSG %s :%s"):format(target, message))
+    for line in message:gmatch("[^\r\n]+") do
+        self:raw_send(("PRIVMSG %s :%s"):format(target, line))
+    end
 end
 
 return {["IrcConnection"] = IrcConnection}
